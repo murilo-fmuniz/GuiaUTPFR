@@ -1,15 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ChatMessages from './ChatMessages';
 import ChatInput from './ChatInput';
 import { useTheme } from '../ThemeContext';
-import { sendChatMessage } from '../api';
+import { sendChatMessageToChat, getUserChats, getChat } from '../api';
 
-const Chatbot = () => {
+const Chatbot = ({ user }) => {
   const [messages, setMessages] = useState([
     { sender: 'bot', text: 'Olá! Bem-vindo ao Guia UTFPR Apucarana! 🎓 Estou aqui para ajudar com informações sobre o vestibular e campus. O que você gostaria de saber?' }
   ]);
   const [loading, setLoading] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const { theme } = useTheme();
+
+  // Load chat history on mount
+  useEffect(() => {
+    const loadChatHistory = async () => {
+      if (!user) {
+        setLoadingHistory(false);
+        return;
+      }
+
+      try {
+        const chats = await getUserChats();
+        
+        if (chats && chats.length > 0) {
+          // Get the most recent chat
+          const latestChat = chats[0];
+          setCurrentChatId(latestChat.id);
+          
+          // Load messages from the latest chat
+          const chatData = await getChat(latestChat.id);
+          
+          if (chatData && chatData.messages && chatData.messages.length > 0) {
+            const formattedMessages = chatData.messages.map(msg => ({
+              sender: msg.role === 'user' ? 'user' : 'bot',
+              text: msg.content
+            }));
+            setMessages(formattedMessages);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar histórico:', error);
+        // Keep default welcome message on error
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    loadChatHistory();
+  }, [user]);
 
   const handleSendMessage = async (userInput) => {
     const userMessage = { sender: 'user', text: userInput };
@@ -18,7 +58,13 @@ const Chatbot = () => {
     setLoading(true);
 
     try {
-      const response = await sendChatMessage(userInput);
+      const response = await sendChatMessageToChat(userInput, currentChatId);
+      
+      // Update chat ID if new chat was created
+      if (response.chat_id && response.chat_id !== currentChatId) {
+        setCurrentChatId(response.chat_id);
+      }
+      
       setMessages((prevMessages) => [
         ...prevMessages,
         { sender: 'bot', text: response.reply },
@@ -38,6 +84,18 @@ const Chatbot = () => {
     theme === 'dark'
       ? 'bg-[#232324]'
       : 'bg-white';
+
+  // Show loading while fetching history
+  if (loadingHistory) {
+    return (
+      <div className={`flex flex-col w-full h-full items-center justify-center ${bgClass}`}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500"></div>
+        <p className={`mt-4 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+          Carregando histórico...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col w-full h-full overflow-hidden transition-all ${bgClass}`}>

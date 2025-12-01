@@ -121,3 +121,21 @@ export async function loginUser(username, password) {
   const data = await response.json();
   return data; // { access_token, token_type }
 }
+
+// Get user's chat history
+export async function getUserChats() {
+  return apiCall('/chats', 'GET');
+}
+
+// Get specific chat with messages
+export async function getChat(chatId) {
+  return apiCall(`/chats/${chatId}`, 'GET');
+}
+
+// Send message to specific chat
+export async function sendChatMessageToChat(message, chatId = null) {
+  const token = getToken();
+  const endpoint = token ? '/chat' : '/chat/public';
+  const body = chatId ? { message, chat_id: chatId } : { message };
+  return apiCall(endpoint, 'POST', body);
+}
