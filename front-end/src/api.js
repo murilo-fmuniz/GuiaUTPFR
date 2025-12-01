@@ -1,6 +1,6 @@
 // API utility for authenticated requests
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 // Get token from localStorage
 function getToken() {
