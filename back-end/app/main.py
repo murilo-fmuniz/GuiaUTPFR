@@ -1,5 +1,4 @@
 import os
-import re
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,22 +7,22 @@ from .rag_simples import initialize_rag
 
 app = FastAPI(title="Chatbot API with Auth")
 
-# CORS Configuration - Accept all origins for now
-# In production, restrict to specific domains
+# CORS - MUST be added FIRST before any routes
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],  # Allow ALL origins
+    allow_credentials=False,  # Important: False when using wildcard
+    allow_methods=["*"],  # Allow ALL methods
+    allow_headers=["*"],  # Allow ALL headers
+    expose_headers=["*"],
 )
-
-print("CORS configured to accept all origins (*)")
 
 app.include_router(api_router)
 
 @app.on_event("startup")
 def startup():
     """Inicializa RAG na startup"""
+    print("🚀 API starting up...")
     initialize_rag()
+    print("✅ API ready!")
 
