@@ -228,4 +228,8 @@ Contexto da UTFPR:
 
 @router.get("/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "service": "Chatbot API with Auth",
+        "version": "1.0.0"
+    }
