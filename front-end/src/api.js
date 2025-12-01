@@ -40,24 +40,31 @@ export async function apiCall(endpoint, method = 'GET', body = null) {
     config.body = JSON.stringify(body);
   }
   
-  const response = await fetch(`${API_BASE}${endpoint}`, config);
-  
-  if (!response.ok) {
-    if (response.status === 401) {
-      // Token expirou ou é inválido
-      localStorage.removeItem('token');
-      window.location.href = '/';
+  try {
+    const response = await fetch(`${API_BASE}${endpoint}`, config);
+    
+    if (!response.ok) {
+      if (response.status === 401) {
+        // Token expirou ou é inválido
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      }
+      const error = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(error.detail || `API Error: ${response.status}`);
     }
-    const error = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(error.detail || 'API Error');
+    
+    return response.json();
+  } catch (error) {
+    console.error(`API Error on ${endpoint}:`, error);
+    throw error;
   }
-  
-  return response.json();
 }
 
-// Chat endpoint
+// Chat endpoint - use public endpoint if no auth
 export async function sendChatMessage(message) {
-  return apiCall('/chat', 'POST', { message });
+  const token = getToken();
+  const endpoint = token ? '/chat' : '/chat/public';
+  return apiCall(endpoint, 'POST', { message });
 }
 
 // Get current user

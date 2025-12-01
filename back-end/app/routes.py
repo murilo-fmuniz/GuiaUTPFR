@@ -56,6 +56,75 @@ def read_me(current_user=Depends(get_current_user)):
     return current_user
 
 
+@router.post("/chat/public", response_model=schemas.ChatResponse)
+async def chat_public(req: schemas.ChatRequest, db: Session = Depends(get_db)):
+    """
+    Public endpoint para testar o chat sem autenticação.
+    Ideal para testes e demo do frontend.
+    """
+    # Criar chat anônimo (user_id = -1)
+    anonymous_user_id = -1
+    
+    # Recuperar contexto do RAG
+    rag_context = get_context_for_query(req.message, k=5)
+    
+    # Preparar mensagem para Groq
+    groq_messages = [
+        {"role": "user", "content": req.message}
+    ]
+
+    # Chamar Groq API
+    GROQ_API_URL = os.getenv("GROQ_API_URL", "https://api.groq.com/openai/v1/chat/completions")
+    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+    if not GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Groq API key not configured")
+
+    # Incluir contexto RAG na system prompt
+    system_message = """Você é um assistente especializado em informações sobre o vestibular da UTFPR.
+Responda com base no contexto fornecido sobre o vestibular da UTFPR.
+Se não souber a resposta baseado no contexto, diga que não tem essas informações.
+
+Contexto da UTFPR:
+"""
+    if rag_context:
+        system_message += f"\n{rag_context}"
+
+    body = {
+        "model": "llama-3.1-8b-instant",
+        "messages": [
+            {"role": "system", "content": system_message},
+            *groq_messages,
+        ],
+        "max_tokens": 512,
+        "temperature": 0.7,
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {GROQ_API_KEY}",
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            groq_resp = await client.post(GROQ_API_URL, json=body, headers=headers)
+        if groq_resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"Groq API error: {groq_resp.text}")
+        
+        groq_data = groq_resp.json()
+        # Extract reply from Groq response
+        try:
+            reply = groq_data["choices"][0]["message"]["content"]
+        except Exception:
+            reply = "[Error: Unexpected Groq response format]"
+        
+        return schemas.ChatResponse(
+            chat_id=-1,
+            reply=reply,
+            message_id=-1
+        )
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=502, detail=f"Error connecting to Groq API: {str(e)}")
+
+
 @router.get("/chats", response_model=list[schemas.ChatOut])
 def list_chats(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     """Lista todos os chats do usuário."""
