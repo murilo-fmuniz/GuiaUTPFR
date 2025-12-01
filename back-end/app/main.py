@@ -14,6 +14,10 @@ if cors_origins == "*":
 else:
     allow_origins = [origin.strip() for origin in cors_origins.split(",")]
 
+# Debug log
+print(f"CORS_ORIGINS env: {cors_origins}")
+print(f"Allowed origins: {allow_origins}")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
