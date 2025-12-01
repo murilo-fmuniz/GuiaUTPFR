@@ -8,7 +8,7 @@ from .rag_simples import initialize_rag
 app = FastAPI(title="Chatbot API with Auth")
 
 # Allow requests from the frontend (adjust in production)
-cors_origins = os.getenv("CORS_ORIGINS", "*")
+cors_origins = os.getenv("CORS_ORIGINS", "https://guia-utpfr.vercel.app,http://localhost:5173,http://localhost:3000")
 if cors_origins == "*":
     allow_origins = ["*"]
 else:
