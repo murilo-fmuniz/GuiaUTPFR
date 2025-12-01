@@ -2,6 +2,9 @@
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
+// Debug: log the API base URL
+console.log('API_BASE:', API_BASE, 'from env:', import.meta.env.VITE_API_URL);
+
 // Get token from localStorage
 function getToken() {
   return localStorage.getItem('token');
