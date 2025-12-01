@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../ThemeContext';
-import { setToken } from '../api';
+import { setToken, loginUser } from '../api';
 
 const Login = ({ onLogin, isModal = false }) => {
   const [username, setUsername] = useState('');
@@ -19,32 +19,13 @@ const Login = ({ onLogin, isModal = false }) => {
     setLoading(true);
 
     try {
-      const formData = new URLSearchParams();
-      formData.append('username', username);
-      formData.append('password', senha);
-
-      const response = await fetch('http://localhost:8000/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        setError(data.detail || 'Erro ao fazer login');
-        setLoading(false);
-        return;
-      }
-
-      const data = await response.json();
+      const data = await loginUser(username, senha);
       setLoading(false);
       // Armazenar token no localStorage
       setToken(data.access_token);
       onLogin({ username, email: username, token: data.access_token });
     } catch (err) {
-      setError('Erro ao conectar com o servidor: ' + err.message);
+      setError(err.message || 'Erro ao conectar com o servidor');
       setLoading(false);
     }
   };

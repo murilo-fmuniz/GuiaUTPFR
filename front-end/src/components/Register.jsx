@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTheme } from '../ThemeContext';
+import { registerUser, setToken } from '../api';
 
 const Register = ({ onRegister, onBackToLogin, isModal = false }) => {
   const [username, setUsername] = useState('');
@@ -9,7 +10,7 @@ const Register = ({ onRegister, onBackToLogin, isModal = false }) => {
   const [error, setError] = useState('');
   const { theme } = useTheme();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!username || !email || !senha || !confirmSenha) {
@@ -28,7 +29,18 @@ const Register = ({ onRegister, onBackToLogin, isModal = false }) => {
     }
 
     setError('');
-    onRegister({ username, email, senha });
+
+    try {
+      await registerUser(username, email, senha);
+      // Após registrar com sucesso, fazer login automático
+      const loginModule = await import('../api');
+      const { loginUser } = loginModule;
+      const loginData = await loginUser(username, senha);
+      setToken(loginData.access_token);
+      onRegister({ username, email, token: loginData.access_token });
+    } catch (err) {
+      setError(err.message || 'Erro ao criar conta');
+    }
   };
 
   const formBgClass = theme === 'dark'

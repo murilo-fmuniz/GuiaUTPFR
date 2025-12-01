@@ -71,3 +71,48 @@ export async function sendChatMessage(message) {
 export async function getCurrentUser() {
   return apiCall('/me', 'GET');
 }
+
+// Register new user
+export async function registerUser(username, email, password) {
+  const response = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      username,
+      email,
+      password,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(error.detail || `Registration error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// Login user
+export async function loginUser(username, password) {
+  const formData = new URLSearchParams();
+  formData.append('username', username);
+  formData.append('password', password);
+
+  const response = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(error.detail || `Login error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data; // { access_token, token_type }
+}
