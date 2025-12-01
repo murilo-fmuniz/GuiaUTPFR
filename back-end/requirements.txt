@@ -6,8 +6,9 @@ torch
 sentence-transformers>=2.2.0
 faiss-cpu>=1.7.4
 
-# Correção do erro atual
+# Correções de dependências extras
 email-validator>=2.0.0
+python-multipart>=0.0.6
 
 # Restante das dependências
 fastapi>=0.120.0
