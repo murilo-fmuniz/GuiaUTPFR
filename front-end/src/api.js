@@ -88,6 +88,11 @@ export async function registerUser(username, email, password) {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }));
+    // Handle validation errors (422)
+    if (error.detail && Array.isArray(error.detail)) {
+      const messages = error.detail.map(e => e.msg || e.message || JSON.stringify(e)).join(', ');
+      throw new Error(messages);
+    }
     throw new Error(error.detail || `Registration error: ${response.status}`);
   }
 
