@@ -6,6 +6,9 @@ torch
 sentence-transformers>=2.2.0
 faiss-cpu>=1.7.4
 
+# Correção do erro atual
+email-validator>=2.0.0
+
 # Restante das dependências
 fastapi>=0.120.0
 uvicorn[standard]>=0.21.0
